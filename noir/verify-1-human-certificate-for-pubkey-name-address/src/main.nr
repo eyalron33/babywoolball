@@ -7,6 +7,9 @@
  * Nargo version = 0.29.0 noirc = 0.29.0+a5b7df12faf9d71ff24f8c5cde5e78da44558caf
  */
 
+mod data_processing;
+
+use data_processing::bytes_to_fields;
 use dep::std;
 
 // Struct representing a person, with x and y coordinates for a public key
@@ -26,6 +29,7 @@ struct Certificate {
     person: Person,
     name: Field, // blockchain names are uint256 which we represent as Field in Noir
     expiration: Field,
+    cert_type: Field,
     birthdate: Field
 }
 
@@ -38,8 +42,8 @@ struct HashPath {
 impl Certificate {
     // Method to hash the certificate data using the Poseidon hash function
     fn hash(self) -> Field {
-        let certificate_as_array : [Field; 5] = [self.person.x, self.person.y, self.name, self.expiration, self.birthdate];
-        let certificate_hash = std::hash::poseidon::bn254::hash_5(certificate_as_array);
+        let certificate_as_array : [Field; 6] = [self.person.x, self.person.y, self.name, self.expiration, self.cert_type, self.birthdate];
+        let certificate_hash = std::hash::poseidon::bn254::hash_6(certificate_as_array);
 
         certificate_hash
     }
@@ -69,27 +73,23 @@ fn main(
     signer_hash_path: HashPath
 ) {
     // Verify the person signed the address to signal that it belongs to them
-    let person_address_hash = std::hash::poseidon::bn254::hash_1([person_address]);
-    print("person_address: ");
-    println(person_address);
-    print("person_address_hash: ");
-    println(person_address_hash);
     let verify_own_signature = dep::std::eddsa::eddsa_poseidon_verify(
         person.x,
         person.y,
         own_signature.s,
         own_signature.rx,
         own_signature.ry,
-        person_address_hash
+        person_address // We treat EVM addresses as Field
     );
 
     // Verify that the current timestamp is before the certificate expiration date
     assert(last_checked_timestamp.lt(expiration));
 
     // Create a Certificate struct with type 2 (birth certificate for addresses)
-    let certificate = Certificate { person, name, expiration, birthdate };
+    let certificate = Certificate { person, name, expiration, cert_type: 1, birthdate };
 
     // Verify signers signatures
+
     let verify_signer_signature = dep::std::eddsa::eddsa_poseidon_verify(
         signer.x,
         signer.y,
@@ -111,4 +111,9 @@ fn main(
 
     // Verify that the calculated Merkle roots match the trust kernel root
     assert(merkel_root == trust_kernel_root);
+}
+
+// convers a message to an array of Field
+pub fn message_to_fields<N, M>(msg: str<N>) -> ([Field; M], u32) {
+    bytes_to_fields(msg.as_bytes())
 }
