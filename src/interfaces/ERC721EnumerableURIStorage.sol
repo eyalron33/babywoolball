@@ -167,7 +167,7 @@ abstract contract ERC721EnumerableURIStorage is ERC721, IERC721Enumerable, IERC4
      * @dev See {IERC721Metadata-tokenURI}.
      */
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        _requireMinted(tokenId);
+        _ownerOf(tokenId) != address(0);
 
         string memory _tokenURI = _tokenURIs[tokenId];
         string memory base = _baseURI();
@@ -194,7 +194,7 @@ abstract contract ERC721EnumerableURIStorage is ERC721, IERC721Enumerable, IERC4
      * - `tokenId` must exist.
      */
     function _setTokenURI(uint256 tokenId, string memory _tokenURI) internal virtual {
-        require(_exists(tokenId), "ERC721URIStorage: URI set of nonexistent token");
+        require(_ownerOf(tokenId) != address(0), "ERC721URIStorage: URI set of nonexistent token"); 
         _tokenURIs[tokenId] = _tokenURI;
 
         emit MetadataUpdate(tokenId);

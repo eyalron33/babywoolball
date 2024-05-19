@@ -14,7 +14,7 @@ import "openzeppelin-contracts/contracts/access/Ownable.sol";
  * @dev Baby Woolball Registry contract
  * @dev A name system for humans only
  */
-contract BabyWoolball is IWoolball, LCT, Ownable {
+contract BabyWoolball is IBabyWoolball, LCT, Ownable {
     // NONE = uninitiated
     // HUMAN - a human name, e.g., "neiman#"
     // SUBNAME - "car.neiman#"
@@ -63,14 +63,14 @@ contract BabyWoolball is IWoolball, LCT, Ownable {
 
     modifier isSubname(uint256 nameID) {
         require(
-            names[nameID].nameType == NameType.SUBNAME
+            _names[nameID].nameType == NameType.SUBNAME
             , "nameID is not of a subname");
         _;
     }
 
     modifier isVerified(uint256 nameID) {
         require(
-            names[nameID].verified
+            _names[nameID].verified
             , "nameID is not of verified as human yet");
         _;
     }
@@ -111,7 +111,7 @@ contract BabyWoolball is IWoolball, LCT, Ownable {
         _names[nameID].expirationTimestamp = expirationTimestamp;
         _names[nameID].creatorWallet = creator;
 
-        emit NewHumanName(name, nameID, creator);
+        emit humanNameCreated(name, nameID, creator);
 
         return nameID;
     }
@@ -120,18 +120,18 @@ contract BabyWoolball is IWoolball, LCT, Ownable {
         bytes calldata proof,
         uint256 nameID,
         uint256 verifiedForTimestamp
-    ) {
+    ) public virtual nameIDExists(nameID) {
         bytes32[] memory publicInputs = new bytes32[](6);
 
         // Prepare the public data
         publicInputs[0] = _names[nameID].pubkeyX;
         publicInputs[1] = _names[nameID].pubkeyY;
         publicInputs[2] = trustKernelHash;
-        publicInputs[3] = bytes32(verifiedForDate);
+        publicInputs[3] = bytes32(verifiedForTimestamp);
         publicInputs[4] = bytes32(uint256(uint160(ownerOf(nameID))) << 96);
         publicInputs[5] = bytes32(nameID);
 
-        verificationResult = verifyHuman(proof, publicInputs);
+        bool verificationResult = verifyHuman(proof, publicInputs);
 
         require(verificationResult, "Baby Woolball: proof failes");
 
@@ -162,47 +162,47 @@ contract BabyWoolball is IWoolball, LCT, Ownable {
         // subnames are locked to names so they will be transferred when the name is transferred
         _lock(subnameID, address(this), nameID);
 
-        // update subdomains list
-        _names[nameID].subdomains.push(subnameID);
+        // update subnames list
+        _names[nameID].subnames.push(subnameID);
 
         // emit new subname
-        emit NewSubname(subname, nameID, subnameID);
+        emit subnameCreated(subname, nameID, subnameID);
 
         return subnameID;
     }
 
     // Removes an existing subname
     function removeSubname(
-        uint256 subnameID,
+        uint256 subnameID
     ) onlyNameOwner(subnameID) public virtual {
-        require(_names[nameID].expirationTimestamp > 0, "Baby Woolball: Subname is already removed");
+        require(_names[subnameID].expirationTimestamp > 0, "Baby Woolball: Subname is already removed");
 
         _removeSubname(subnameID);
     }
 
-    // Expired subdomains are practically considered not registered, but still occupy
-    // blockchains space. This functions lets anyone clear the expired subdomains of a name.
-    function clearExpiredSubnames(uint256 nameID) {
-        Name name = _names[nameID];
+    // Expired subnames are practically considered not registered, but still occupy
+    // blockchains space. This functions lets anyone clear the expired subnames of a name.
+    function clearExpiredSubnames(uint256 nameID) public virtual nameIDExists(nameID) {
+        Name memory name = _names[nameID];
 
         for (uint256 i = 0; i < name.subnames.length; i++) {
             // handle the case that name.subnames.length decreased during the loop
-            // running since a subdomain was removed
+            // running since a subname was removed
             if (i < name.subnames.length)
                 break;
 
-            Name subdomain = _names[name.subnames[i]];
+            Name memory subname = _names[name.subnames[i]];
 
-            // Check if the subdomain expired
-            if (subdomain..expirationTimestamp > block.timestamp) {
+            // Check if the subname expired
+            if (subname.expirationTimestamp > block.timestamp) {
                 // Swap with the last element and then pop
-                parentName.subnames[i] = parentName.subnames[subnames.length - 1];
-                parentName.subnames.pop();
+                name.subnames[i] = name.subnames[name.subnames.length - 1];
+                name.subnames.pop();
             }
         }
     }
 
-    // TODO: transfer subdomains and names
+    // TODO: transfer subnames and names
 
     /**
      * @dev Sets the data contract address for the specified name.
@@ -214,14 +214,12 @@ contract BabyWoolball is IWoolball, LCT, Ownable {
         address dataContract
     ) public virtual onlyNameOwner(nameID) isVerified(nameID) {
         _names[nameID].data = dataContract;
-
-        // emit NewdataContract(nameID, dataContract);
     }
 
     function setPubkey(
         uint256 nameID,
-        byes32 pubkeyX,
-        byes32 pubkeyY
+        bytes32 pubkeyX,
+        bytes32 pubkeyY
     ) public virtual onlyNameOwner(nameID) {
         _names[nameID].pubkeyX = pubkeyX;
         _names[nameID].pubkeyY = pubkeyY;
@@ -236,21 +234,21 @@ contract BabyWoolball is IWoolball, LCT, Ownable {
         return _names[nameID].data;
     }
 
-    function expirationTimestamp(uint256 nameID) public view virtual returns (uint256) {
+    function getExpirationTimestamp(uint256 nameID) public view virtual returns (uint256) {
         return _names[nameID].expirationTimestamp;
     }
 
     // Returns the amount of registered subnames.
     // Remark: the number might also include expired subnames.
     function subnamesAmount(uint256 nameID) public view virtual returns (uint256) {
-        return _names[nameID].subdomains.length;
+        return _names[nameID].subnames.length;
     }
 
     function subnameIndex(uint256 nameID, uint256 index) public view virtual returns (uint256) {
         return _names[nameID].subnames[index];
     }
 
-    function parentID(uint256 nameID) public view virtual isSubname(nameID)
+    function getParentID(uint256 nameID) public view virtual isSubname(nameID)
     returns (uint256)
     {
         return _names[nameID].creatorNameID;
@@ -266,7 +264,7 @@ contract BabyWoolball is IWoolball, LCT, Ownable {
             return _names[nameID].name;
         else {
             // name is a Subname
-            string subname = _names[nameID].name;
+            string memory subname = _names[nameID].name;
             uint256 creatorSubnameID = _names[nameID].creatorNameID;
 
             do {
@@ -280,36 +278,30 @@ contract BabyWoolball is IWoolball, LCT, Ownable {
 
     // Removes an existing subname
     function _removeSubname(
-        uint256 subnameID,
+        uint256 subnameID
     ) private {
-        // remove subdomain from creatorNameID list
+        // remove subname from creatorNameID list
         uint256 parentID = _names[subnameID].creatorNameID;
-        Name parentName = _names[parentID];
+        Name memory parentName = _names[parentID];
 
         for (uint256 i = 0; i < parentName.subnames.length; i++) {
             if (parentName.subnames[i] == subnameID) {
                 // Swap with the last element and then pop
-                parentName.subnames[i] = parentName.subnames[subnames.length - 1];
+                parentName.subnames[i] = parentName.subnames[parentName.subnames.length - 1];
                 parentName.subnames.pop();
             }
         }
 
-        // set expiration date of subdomain to 0
-        _names[subnameID].expirationTimestamp = 0
+        // set expiration date of subname to 0
+        _names[subnameID].expirationTimestamp = 0;
 
-        // set type of subdomain to NONE
-        _names[subnameID].nameType = NameType.NONE
+        // set type of subname to NONE
+        _names[subnameID].nameType = NameType.NONE;
 
         // remove creator nameID
-        names[subnameID].creatorNameID = 0;
+        _names[subnameID].creatorNameID = 0;
 
-        _mint(ownerOf(nameID), subnameID);
-
-        // unlock subdomain TODO
-        _lock(subnameID, address(this), nameID);
-
-        // emit new subname TODO: add to events list
-        emit RemovedSubname(subname, nameID, subnameID);
+        // unlock subname TODO
     }
 
 }
