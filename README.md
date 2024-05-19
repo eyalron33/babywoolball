@@ -1,4 +1,4 @@
-<h1 align="center"> Baby Woolball - A name system for humans only </h1> <br>
+<h1 align="center"> Baby Woolball - A name system for humans </h1> <br>
 <p align="center">
   <img alt="Baby Woolball Mascot" src="https://neiman.co.il/images/babywoolball_mascot.jpg" width="300">
 </p>
