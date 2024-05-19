@@ -5,7 +5,16 @@
 
 Baby Woolball is a blockchain name system where only humans can have names. It helps people know if they talk with humans or AIs online.
 
-To have a Baby Woolball name people need to submit a [zk proof of personhood](#zk-proof-of-personhood). With ZK users can keep their privacy while still being able to prove qualitative claims about themselves, such as humanity or adulthood. 
+To have a Baby Woolball name people need to submit a [zk proof of personhood](#zk-proof-of-personhood). With ZK users can keep their privacy while still being able to prove qualitative claims about themselves, such as humanity or proof of age. 
+
+## How to use Baby Woolball
+To use Baby Woolball users first register a name and set their private keys to it. The name is disabled at first. Users have 30 days to submit proof of humanity to enable it.
+
+The owner of the Baby Woolball contract sets a Merkle tree root of the trusted entities for creating proof of personhood certificates. The public keys of the entities are the leaves of the Merkle tree.
+
+The user needs to get a proof of personhood certificate from one of those entities. These certificates are created with Safecat. Using this certificate, the users create a zk-certificate stating that they are human. The user then submits the zk-certificate to Baby Woolball to enable the program.
+
+The certificate standard of Baby Woolball also includes a "birthdate" field, enabling in the future to also post proof of age.
 
 ## Tech stack
 Woolball is built using Noir, Rust, and Solidity.
