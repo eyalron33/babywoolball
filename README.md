@@ -7,6 +7,8 @@ Baby Woolball is a blockchain name system where only humans can have names. It h
 
 To have a Baby Woolball name people need to submit a [zk proof of personhood](#zk-proof-of-personhood). With ZK users can keep their privacy while still being able to prove qualitative claims about themselves, such as humanity or proof of age. 
 
+Baby Woolball names are of the form `neiman#`, where the `#` symbolizes the name belonging to "Baby Woolball".
+
 ## How to use Baby Woolball
 To use Baby Woolball users first register a name and set their private keys to it. The name is disabled at first. Users have 30 days to submit proof of humanity to enable it.
 
@@ -25,7 +27,7 @@ The signatures are done with a CLI cryptographic tool I previously published cal
 
 At the first version, the certificates were json strings. This turned out to be problematic with Noir which is both not good with manipulating string and is very slow with it. In the final version, the certificates are an array of BN254 curve elements, a format that integrates perfectly with Noir needs.
 
-**Noir**. Noir is used to create zk proofs of personhood using the certificates. Noir also generates a Solidity verifier to be used to verify the proofs on-chain.
+**Noir**. Noir is used to create zk proofs of personhood using the certificates. Noir also generates a Solidity verifier to be used to verify the proofs on-chain. See the Noir program [here](https://github.com/eyalron33/babywoolball/tree/main/noir/verify-1-human-certificate-for-pubkey-name-address).
 
 **Solidity**. The name system is written in Solidity. It is a new code base, not a fork of any existing name system.
 
