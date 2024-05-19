@@ -83,7 +83,7 @@ contract BabyWoolball is IBabyWoolball, LCT, Ownable {
         string memory symbol,
         address verifierContract
     ) LCT(name, symbol) {
-        verifyHuman = UltraVerifier(verifierContract);
+        verifyHumanContract = UltraVerifier(verifierContract);
     }
 
     // Create a new human name with suffix "#", e.g. "neiman#"
@@ -111,7 +111,7 @@ contract BabyWoolball is IBabyWoolball, LCT, Ownable {
         _names[nameID].expirationTimestamp = expirationTimestamp;
         _names[nameID].creatorWallet = creator;
 
-        emit humanNameCreated(name, nameID, creator);
+        emit humanNameCreated(name, creator, expirationTimestamp);
 
         return nameID;
     }
@@ -131,7 +131,7 @@ contract BabyWoolball is IBabyWoolball, LCT, Ownable {
         publicInputs[4] = bytes32(uint256(uint160(ownerOf(nameID))) << 96);
         publicInputs[5] = bytes32(nameID);
 
-        bool verificationResult = verifyHuman(proof, publicInputs);
+        bool verificationResult = verifyHumanContract.verify(proof, publicInputs);
 
         require(verificationResult, "Baby Woolball: proof failes");
 
@@ -183,21 +183,19 @@ contract BabyWoolball is IBabyWoolball, LCT, Ownable {
     // Expired subnames are practically considered not registered, but still occupy
     // blockchains space. This functions lets anyone clear the expired subnames of a name.
     function clearExpiredSubnames(uint256 nameID) public virtual nameIDExists(nameID) {
-        Name memory name = _names[nameID];
-
-        for (uint256 i = 0; i < name.subnames.length; i++) {
+        for (uint256 i = 0; i < _names[nameID].subnames.length; i++) {
             // handle the case that name.subnames.length decreased during the loop
             // running since a subname was removed
-            if (i < name.subnames.length)
+            if (i < _names[nameID].subnames.length)
                 break;
 
-            Name memory subname = _names[name.subnames[i]];
+            Name memory subname = _names[_names[nameID].subnames[i]];
 
             // Check if the subname expired
             if (subname.expirationTimestamp > block.timestamp) {
                 // Swap with the last element and then pop
-                name.subnames[i] = name.subnames[name.subnames.length - 1];
-                name.subnames.pop();
+                _names[nameID].subnames[i] = _names[nameID].subnames[_names[nameID].subnames.length - 1];
+                _names[nameID].subnames.pop();
             }
         }
     }
@@ -260,20 +258,24 @@ contract BabyWoolball is IBabyWoolball, LCT, Ownable {
     }
 
     function getName(uint256 nameID) nameIDExists(nameID) public view returns (string memory) {
+        string memory name;
+
         if (_names[nameID].nameType == NameType.HUMAN)
-            return _names[nameID].name;
+            name = _names[nameID].name;
         else {
             // name is a Subname
-            string memory subname = _names[nameID].name;
+            name = _names[nameID].name;
             uint256 creatorSubnameID = _names[nameID].creatorNameID;
 
             do {
-                subname.concat(subname, ".", _names[creatorSubnameID].name);
+                name = string.concat(name, ".", _names[creatorSubnameID].name);
 
                 // update creatorSubnameID to the parent of the current part of the name
                 creatorSubnameID = _names[creatorSubnameID].creatorNameID;
             } while (creatorSubnameID > 0);
         }
+
+        return name;
     }
 
     // Removes an existing subname
@@ -282,13 +284,12 @@ contract BabyWoolball is IBabyWoolball, LCT, Ownable {
     ) private {
         // remove subname from creatorNameID list
         uint256 parentID = _names[subnameID].creatorNameID;
-        Name memory parentName = _names[parentID];
 
-        for (uint256 i = 0; i < parentName.subnames.length; i++) {
-            if (parentName.subnames[i] == subnameID) {
+        for (uint256 i = 0; i < _names[parentID].subnames.length; i++) {
+            if (_names[parentID].subnames[i] == subnameID) {
                 // Swap with the last element and then pop
-                parentName.subnames[i] = parentName.subnames[parentName.subnames.length - 1];
-                parentName.subnames.pop();
+                _names[parentID].subnames[i] = _names[parentID].subnames[_names[parentID].subnames.length - 1];
+                _names[parentID].subnames.pop();
             }
         }
 

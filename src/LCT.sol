@@ -42,7 +42,7 @@ contract LCT is ICommanderToken, ILockedToken, ERC721EnumerableURIStorage {
 
     modifier approvedOrOwner(uint256 tokenID) {
         require(
-            _isAuthorized(msg.sender, tokenID),
+            _isApprovedOrOwner(msg.sender, tokenID),
             "ERC721: caller is not token owner or approved"
         );
         _;
@@ -84,7 +84,7 @@ contract LCT is ICommanderToken, ILockedToken, ERC721EnumerableURIStorage {
             );
         else
             require(
-                _isAuthorized(_msgSender(), tokenID),
+                _isApprovedOrOwner(_msgSender(), tokenID),
                 "ERC721: caller is not token owner or approved"
             );
         _;
@@ -174,7 +174,7 @@ contract LCT is ICommanderToken, ILockedToken, ERC721EnumerableURIStorage {
         // CTContractAddress can always remove the dependency, but the owner 
         // of tokenID can remove it only if CTID is transferable & burnable
         require(
-            ( _isAuthorized(msg.sender, tokenID) &&
+            ( _isApprovedOrOwner(msg.sender, tokenID) &&
             CTContract.isTransferable(CTID) &&
             CTContract.isBurnable(CTID) ) ||
             ( msg.sender == CTContractAddress ),
