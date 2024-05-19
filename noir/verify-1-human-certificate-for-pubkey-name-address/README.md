@@ -1,15 +1,13 @@
-# Noir Safecat Example: Poseidon hash of a long string
-*(Adjusted for Safecat v0.0.4)*
+# An example generating ZK proof of personhood for a combination of pubkey and Baby Woolball names.
+*(Adjusted for Safecat version from [this branch](https://github.com/HastilyConceivedCreatures/safecat/tree/feature/certPubkeyName))*
 
-A test integration of Safecat with Noir. It demonstrates how to prove a claim in Noir based on signed certificates created with Safecat.
-
-This is a whimsical example that serves as a proof of concept. It was created manually, but our end goal is to automate its creation with Safecat.
+An example of creating ZK proof of personhood certificates for Baby Woolball. The regular (non-ZK) certificates are generated with Safecat, whereas the zk-proof happens here with Noir.
 
 The data for this example is all saved in the `data/` folder.
 
 
 ## Example persons
-We "created" keys of four persons:
+We "created" keys of five persons:
 
 **da Vinci** (private key in `data/keys/davinci.key`):
 ```
@@ -42,7 +40,7 @@ y: 14627334939639963156347001628734192974815272155657246886833616017790624717057
 ```
 
 ## Example certificates
-Safecat certificates are now in the prototype stage. They contain two lines. The first is the certificate itself, and the second is the signature.
+Safecat certificates contain two lines. The first is the certificate itself, and the second is the signature.
 
 The certificate contains five fields. `x` and `y` are the public key of the person the certificate is issued to. `expdate` is the expiration date of the certificate, denoted in Unix timestamp. 
 
@@ -69,11 +67,4 @@ Each entity in the kernel is represented by its private keys. We can make a Merk
 
 The trust set of the example is `(da Vinci, Einstein, Newton, Euclid)`. We calculated, using Noir, the Merkle root of `(devinci,newton,Einstein,Euclid)` with Pedersen hash is `0x0b7ce38eae5d7d171103b2879399856eedfacf71a862c7a89ca80a0f03e3be1c`, where the leaves were made left to right.
 
-## Noir program
-The Noir program shows that two persons from the trust set verified that Satoshi is a human born on 1-jan-1990.
-
-As public parameters it takes: Satoshi public key and the trust set Merkle tree hash (called "trust set hash").
-
-The private parameters are the certificate, the public key of the two signers, the two signatures of the certificate, and two hash path proofs showing the signers are in the trust set.
-
-If the program passes, Satoshi proves the claim without disclosing the certificates.
+The name for the certificate is `neiman#` (or a hash of `neiman#`, as represented in Baby Woolball). This happened, well, because I was in a rush making it. It will be fixed later to be `satoshi#`.
