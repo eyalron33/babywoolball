@@ -90,16 +90,14 @@ contract BabyWoolball is IBabyWoolball, LCT, Ownable {
     function newHumanName(
         string calldata name,
         address creator,
-        uint256 expirationTimestamp
+        bytes32 pubkeyX,
+        bytes32 pubkeyY
+
     ) public virtual validName(name) onlyOwner() returns (uint256) {
         uint256 nameID = uint256(sha256(abi.encodePacked(name, "#")));
 
         // Check the name is unregistered
         require( _names[nameID].expirationTimestamp < block.timestamp, "Baby Woolball: name is already registered");
-
-        // Check the expirationTimestamp is not more than 30 days in the future
-        // It can only be extended with a proof of humanity
-        require( expirationTimestamp < (block.timestamp + 30 days), "Baby Woolball: initial expirationTimestamp can be at most 30 days in the future");
 
         // Check the creator doesn't have a name already
         require( balanceOf(creator) == 0, "Baby Woolball: the address already has a name, only one name per address is allwed");
@@ -107,9 +105,14 @@ contract BabyWoolball is IBabyWoolball, LCT, Ownable {
         _mint(creator, nameID);
 
         _names[nameID].name = name;
+        _names[nameID].pubkeyX = pubkeyX;
+        _names[nameID].pubkeyY = pubkeyY;
+
         _names[nameID].nameType = NameType.HUMAN;
-        _names[nameID].expirationTimestamp = expirationTimestamp;
         _names[nameID].creatorWallet = creator;
+
+        // can be extended only if the owner submits proof of humanity within 30 days
+        _names[nameID].expirationTimestamp = block.timestamp + 30 days;
 
         emit humanNameCreated(name, creator, expirationTimestamp);
 
