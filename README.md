@@ -21,7 +21,7 @@ The certificate standard of Baby Woolball also includes a "birthdate" field, ena
 ## Tech stack
 Woolball is built using Noir, Rust, and Solidity.
 
-**Rust**. Rust is used to generate signed certificates for Noir to use. The certificates are hashed using Poseidon function and signed with EdDSA signatures on the Baby Jubjub curve. These cryptographic tools fit well with the current requirements of Noir. 
+**Rust**. Rust is used to generate signed certificates for Noir to use. The certificates are hashed using the Poseidon hash function and signed with EdDSA signatures on the Baby Jubjub curve. These cryptographic tools fit well with the current requirements of Noir. 
 
 The signatures are done with a CLI cryptographic tool I previously published called "Safecat". I created a [special branch of Safecat for the Hackathon](https://github.com/HastilyConceivedCreatures/safecat/tree/feature/certPubkeyName) with extra functionality needed to generate the certificates for Baby Woolball.
 
@@ -34,7 +34,7 @@ At the first version, the certificates were json strings. This turned out to be 
 ## zk proof of personhood
 A proof of personhood is a digital certificate attesting that someone is a unique human person. Such certificates are officially issued by organizations like [Worldcoin](https://worldcoin.org/) or [CAceert](http://www.cacert.org/), but can also be unofficially interpreted by methods of collecting stamps s.a [Gitcoin Passport](https://passport.gitcoin.co/).
 
-However, to use those 
+However, to use those certificates you need to show them which violates your privacy. ZK proof of personhood is a way to have a program create a new certificate for you, based on the old ones. The new certificate simply states that you are a person (and possibly also a proof of age), but uses ZK to not expose any existing certificates you have.
 
 ## Related projects
-[ZkPass](https://zkpass.org/) is a project generating zk proof of personhood based on stamps. Their protocol could be adjusted to verify Woolball name, though it requires internal work of their team since certificates are issued for a blockchain address, while Woolball requires issuance for name and an outside public key.
+[ZkPass](https://zkpass.org/) is a project generating zk proof of personhood based on stamps. Their protocol could be adjusted to verify Woolball name, though it requires internal work of their team since certificates are issued for a blockchain address, while Woolball requires the issuance of a name and an outside public key.
