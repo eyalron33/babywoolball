@@ -42,7 +42,7 @@ contract LCT is ICommanderToken, ILockedToken, ERC721EnumerableURIStorage {
 
     modifier approvedOrOwner(uint256 tokenID) {
         require(
-            _isApprovedOrOwner(msg.sender, tokenID),
+            _isAuthorized(_ownerOf(tokenID), msg.sender, tokenID),
             "ERC721: caller is not token owner or approved"
         );
         _;
@@ -77,14 +77,14 @@ contract LCT is ICommanderToken, ILockedToken, ERC721EnumerableURIStorage {
         if (lockedCT > 0)
             require(
                 (
-                    msg.sender == address(_tokens[tokenID].locked.tokensCollection) || 
+                    _msgSender() == address(_tokens[tokenID].locked.tokensCollection) ||
                     address(this) == address(_tokens[tokenID].locked.tokensCollection) 
                 ),
                 "Locked Token: tokenID is locked and caller is not the contract holding the locking token"
             );
         else
             require(
-                _isApprovedOrOwner(_msgSender(), tokenID),
+                _isAuthorized(_ownerOf(tokenID), _msgSender(), tokenID),
                 "ERC721: caller is not token owner or approved"
             );
         _;
@@ -174,7 +174,7 @@ contract LCT is ICommanderToken, ILockedToken, ERC721EnumerableURIStorage {
         // CTContractAddress can always remove the dependency, but the owner 
         // of tokenID can remove it only if CTID is transferable & burnable
         require(
-            ( _isApprovedOrOwner(msg.sender, tokenID) &&
+            ( _isAuthorized(_ownerOf(tokenID),msg.sender, tokenID) &&
             CTContract.isTransferable(CTID) &&
             CTContract.isBurnable(CTID) ) ||
             ( msg.sender == CTContractAddress ),
@@ -645,13 +645,10 @@ contract LCT is ICommanderToken, ILockedToken, ERC721EnumerableURIStorage {
      *
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenID,
-        uint256 batchSize
-    ) internal virtual override {
-        ERC721EnumerableURIStorage._beforeTokenTransfer(from, to, tokenID, batchSize);
+    function _update(
+        address to, uint256 tokenID, address auth
+    ) internal virtual override returns (address) {
+        address previousOwner = ERC721EnumerableURIStorage._update(to, tokenID, auth);
 
         require(
                 isTransferableToAddress(tokenID, to),
@@ -670,8 +667,10 @@ contract LCT is ICommanderToken, ILockedToken, ERC721EnumerableURIStorage {
                 .lockedTokens[i]
                 .tokensCollection);
             uint256 STID = _tokens[tokenID].lockedTokens[i].tokenID;
-            STContract.transferFrom(from, to, STID);
+            STContract.transferFrom(previousOwner, to, STID);
         }
+
+        return previousOwner;
     }
 
     /**

@@ -81,8 +81,9 @@ contract BabyWoolball is IBabyWoolball, LCT, Ownable {
     constructor(
         string memory name,
         string memory symbol,
+        address initialOwner,
         address verifierContract
-    ) LCT(name, symbol) {
+    ) LCT(name, symbol) Ownable(initialOwner) {
         verifyHumanContract = UltraVerifier(verifierContract);
     }
 
@@ -114,7 +115,7 @@ contract BabyWoolball is IBabyWoolball, LCT, Ownable {
         // can be extended only if the owner submits proof of humanity within 30 days
         _names[nameID].expirationTimestamp = block.timestamp + 30 days;
 
-        emit humanNameCreated(name, creator, expirationTimestamp);
+        emit humanNameCreated(name, creator);
 
         return nameID;
     }

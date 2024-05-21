@@ -19,12 +19,12 @@ interface IBabyWoolball is IERC721 {
     /**
      * @dev Emitted when a new human name is created by a wallet.
      */
-    event humanNameCreated(string name, address creator, uint256 expirationTimestamp);
+    event humanNameCreated(string name, address creator);
 
     /**
      * @dev Emitted when a subname is created
      */
     event subnameCreated(string subname, uint256 creatorNameID, uint256 subnameID);
 
-    function newHumanName(string calldata name, address creator, uint256 expirationTimestamp) external returns (uint256);
+    function newHumanName(string calldata name, address creator, bytes32 pubkeyX, bytes32 pubkeyY) external returns (uint256);
 }
